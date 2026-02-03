@@ -1,16 +1,14 @@
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Checkbox } from "../components/ui/checkbox";
+import { Card, CardContent } from "../components/ui/card";
 import { CalendarIcon, Github, LogOut } from "lucide-react";
-// 1. Import auth and signOut
 import { auth, signIn, signOut } from "../auth";
+import { fetchUserRepos } from "../lib/github";
+import { RepoList } from "../components/dashboard/RepoList";
 
 export default async function Home() {
-  // 2. Fetch the session on the server
   const session = await auth();
 
-  // 3. LOGIC: If the user is NOT logged in, show the Landing Page
+  // Landing Page for Guest Users
   if (!session?.user) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
@@ -18,15 +16,8 @@ export default async function Home() {
           <h1 className="text-6xl font-bold tracking-tighter">
             Git<span className="text-blue-500">Brief</span>
           </h1>
-          <p className="text-zinc-400 text-xl">
-            Your daily standup, written by AI.
-          </p>
-          <form
-            action={async () => {
-              "use server";
-              await signIn("github");
-            }}
-          >
+          <p className="text-zinc-400 text-xl">Your daily standup, written by AI.</p>
+          <form action={async () => { "use server"; await signIn("github"); }}>
             <Button size="lg" className="bg-white text-black hover:bg-zinc-200 cursor-pointer">
               <Github className="mr-2 h-5 w-5" />
               Login with GitHub
@@ -37,66 +28,59 @@ export default async function Home() {
     );
   }
 
-  // 4. LOGIC: If the user IS logged in, show the real Dashboard
+  // Fetch real GitHub data for the logged-in user
+  const { personal, workspace } = await fetchUserRepos(session.user.id!);
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-4xl opacity-90">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
-          
-          {/* Real Header Bar using Session Data */}
-          <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-4">
-            <div className="flex items-center gap-3">
-              {/* Show the real GitHub Avatar */}
-              <img 
-                src={session.user.image || ""} 
-                alt="Avatar" 
-                className="h-10 w-10 rounded-full border border-zinc-700"
-              />
-              <div>
-                <span className="font-medium block text-white">
-                  Good morning, {session.user.name?.split(' ')[0]}
-                </span>
-                <span className="text-xs text-zinc-500">{session.user.email}</span>
-              </div>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center p-8">
+      <div className="w-full max-w-6xl space-y-8">
+        
+        {/* Header Section */}
+        <header className="flex justify-between items-center border-b border-zinc-800 pb-6">
+          <div className="flex items-center gap-4">
+            <img src={session.user.image!} className="h-12 w-12 rounded-full border border-zinc-700" alt="Profile" />
+            <div>
+              <h2 className="text-lg font-bold">Good morning, {session.user.name?.split(' ')[0]}</h2>
+              <p className="text-xs text-zinc-500">{session.user.email}</p>
             </div>
-            
-            <div className="flex gap-2">
-               <Button variant="outline" className="text-zinc-400 border-zinc-700">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                Today
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" className="bg-zinc-900 border-zinc-700">
+              <CalendarIcon className="mr-2 h-4 w-4" /> Today
+            </Button>
+            <form action={async () => { "use server"; await signOut(); }}>
+              <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-red-400 cursor-pointer">
+                <LogOut className="h-5 w-5" />
               </Button>
-              {/* Logout Button */}
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut();
-                }}
-              >
-                <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-red-400 cursor-pointer">
-                  <LogOut className="h-5 w-5" />
+            </form>
+          </div>
+        </header>
+
+        {/* Dashboard Grid */}
+        <main className="grid md:grid-cols-2 gap-12">
+          
+          {/* Column 1: Real Repositories */}
+          <div className="space-y-8">
+            <RepoList title="Workspaces" repos={workspace} icon="🏢" />
+            <RepoList title="Personal" repos={personal} icon="👤" />
+          </div>
+
+          {/* Column 2: AI Draft Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">✨ AI Brief Draft</h3>
+            <Card className="bg-zinc-900 border-zinc-800 h-fit sticky top-8">
+              <CardContent className="pt-6 space-y-4">
+                <p className="text-zinc-400 text-sm italic">
+                  Select the repositories on the left to include in your AI-generated standup report.
+                </p>
+                <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold">
+                  Generate Brief
                 </Button>
-              </form>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* The rest of your Repo List and AI Draft UI goes here... */}
-            <div className="space-y-6">
-               <div className="p-8 border-2 border-dashed border-zinc-800 rounded-lg text-center">
-                  <p className="text-zinc-500">Coming Soon: Your real GitHub repositories will appear here.</p>
-               </div>
-            </div>
-
-            <div className="space-y-4">
-               <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">✨ AI Draft</h3>
-               <Card className="bg-zinc-900 border-zinc-800 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-zinc-500 text-sm">Click "Generate Update" to see your first brief.</p>
-                </CardContent>
-               </Card>
-            </div>
-          </div>
-        </div>
+        </main>
       </div>
     </div>
   );
