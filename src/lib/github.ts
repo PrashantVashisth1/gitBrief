@@ -24,19 +24,24 @@ export async function getOctokit(userId: string) {
   return new Octokit({ auth: token });
 }
 
-export async function fetchUserRepos(userId: string) {
+export async function fetchUserRepos(userId: string, days: number = 1) {
   const octokit = await getOctokit(userId);
+
+  // Calculate the dynamic threshold
+  const threshold = new Date();
+  threshold.setDate(threshold.getDate() - days);
 
   // Get the authenticated user's login to distinguish personal vs work repos
   const { data: userProfile } = await octokit.rest.users.getAuthenticated();
   const userLogin = userProfile.login;
 
-  console.log(userLogin)
-
   const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
     sort: "pushed",
     per_page: 100,
   });
+
+  const isActive = (repo: any) => 
+    repo.pushed_at && new Date(repo.pushed_at) > threshold;
 
   const workspace = repos.filter((repo) => 
     repo.owner.type === "Organization" || 
@@ -47,5 +52,14 @@ export async function fetchUserRepos(userId: string) {
     repo.owner.type === "User" && repo.owner.login === userLogin
   );
 
-  return { personal, workspace };
+  console.log("workspace", workspace)
+  console.log("active workspace", workspace.filter(isActive));
+
+  return { 
+    personal, 
+    workspace,
+    // Add these lists so the UI can highlight them
+    activePersonal: personal.filter(isActive),
+    activeWorkspace: workspace.filter(isActive)
+  };
 }

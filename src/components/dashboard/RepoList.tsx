@@ -1,12 +1,9 @@
-// src/components/dashboard/RepoList.tsx
-
 import { Checkbox } from "../ui/checkbox";
 
 interface Repo {
   id: number;
   name: string;
   owner: { login: string };
-  // Change this to allow null to match GitHub's API type
   updated_at: string | null; 
 }
 
