@@ -32,10 +32,10 @@ export function TimeframeSelector() {
           variant="ghost"
           size="sm"
           onClick={() => setTimeframe(opt.value)}
-          className={`text-xs px-3 py-1 h-7 transition-all ${
+          className={`text-xs px-3 py-1 h-7 transition-all cursor-pointer ${
             currentDays === opt.value 
               ? "bg-zinc-800 text-white shadow-sm" 
-              : "text-zinc-500 hover:text-zinc-300"
+              : "text-zinc-500 hover:text-zinc-900"
           }`}
         >
           {opt.label}

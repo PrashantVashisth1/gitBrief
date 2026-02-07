@@ -52,9 +52,6 @@ export async function fetchUserRepos(userId: string, days: number = 1) {
     repo.owner.type === "User" && repo.owner.login === userLogin
   );
 
-  console.log("workspace", workspace)
-  console.log("active workspace", workspace.filter(isActive));
-
   return { 
     personal, 
     workspace,
@@ -62,4 +59,41 @@ export async function fetchUserRepos(userId: string, days: number = 1) {
     activePersonal: personal.filter(isActive),
     activeWorkspace: workspace.filter(isActive)
   };
+}
+
+
+/**
+ * Fetches recent commits for a specific repository, 
+ * filtered by the authenticated user's login.
+ */
+export async function fetchCommitsForRepo(userId: string, repoFullName: string, days: number = 1) {
+  const octokit = await getOctokit(userId);
+  
+  const { data: userProfile } = await octokit.rest.users.getAuthenticated();
+  const userLogin = userProfile.login;
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  console.log(userLogin)
+  console.log(repoFullName)
+
+  const [owner, repoName] = repoFullName.split("/");
+
+  try {
+    const { data: commits } = await octokit.rest.repos.listCommits({
+      owner,
+      repo: repoName,
+      since: since.toISOString(),
+      author: userLogin, // Ensure only your commits are fetched
+    });
+
+    return commits.map(c => ({
+      sha: c.sha,
+      message: c.commit.message,
+      date: c.commit.author?.date || "",
+    }));
+  } catch (error) {
+    console.error(`Error fetching commits for ${repoFullName}:`, error);
+    return [];
+  }
 }
