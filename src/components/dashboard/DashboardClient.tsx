@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RepoList, Repo, Commit } from "./RepoList";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
@@ -33,6 +33,13 @@ export function DashboardClient({
   const [selectedCommits, setSelectedCommits] = useState<Record<string, string[]>>({});
   const [fetchingRepos, setFetchingRepos] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Clear cache when timeframe changes
+  useEffect(() => {
+    setRepoCommits({});
+    setSelectedCommits({});
+    setFetchingRepos(new Set());
+  }, [days]);
 
   const toggleRepo = async (repo: Repo) => {
     const isFetched = !!repoCommits[repo.full_name];

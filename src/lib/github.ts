@@ -74,8 +74,8 @@ export async function fetchCommitsForRepo(userId: string, repoFullName: string, 
 
   const since = new Date();
   since.setDate(since.getDate() - days);
-  console.log(userLogin)
-  console.log(repoFullName)
+  // console.log(userLogin)
+  // console.log(repoFullName)
 
   const [owner, repoName] = repoFullName.split("/");
 
@@ -86,6 +86,7 @@ export async function fetchCommitsForRepo(userId: string, repoFullName: string, 
       since: since.toISOString(),
       author: userLogin, // Ensure only your commits are fetched
     });
+
 
     return commits.map(c => ({
       sha: c.sha,
